@@ -8,3 +8,13 @@ const (
 	literal    uint8 = iota
 	groupUncap uint8 = iota
 )
+
+type Token struct {
+	toktype uint8
+	val     interface{}
+}
+
+type ParserContext struct {
+	position int
+	tokens   []Token
+}
