@@ -2,6 +2,8 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 func parse(regInput string) *PContext {
@@ -35,11 +37,11 @@ func buildTokens(ctx *PContext, regInput string) {
 	case '[':
 		parseBracket(ctx, regInput)
 	case '{':
-		fmt.Println("Character is a {")
+		parseRepeatingSpecfic(ctx, regInput)
 	case '|':
 		parseOr(ctx, regInput)
 	case '*', '?', '+':
-		fmt.Println("Character is a *, or ? or +")
+		parseRepeating(ctx, regInput)
 	default:
 		token := Token{
 			val:     regChar,
@@ -121,4 +123,82 @@ func parseOr(ctx *PContext, regInput string) {
 		val:     []Token{leftToken, rightToken},
 		tokType: or,
 	}}
+}
+
+func parseRepeating(ctx *PContext, regInput string) {
+	regChar := regInput[ctx.index]
+
+	var min int
+	var max int
+
+	if regChar == '*' {
+		min = 0
+		max = -1
+	} else if regChar == '?' {
+		min = 0
+		max = 1
+	} else {
+		min = 1
+		max = -1
+	}
+
+	lastTokenIndex := len(ctx.tokens) - 1
+	last := ctx.tokens[lastTokenIndex]
+
+	ctx.tokens[lastTokenIndex] = Token{
+		val: RepeatPayload{
+			min:   min,
+			max:   max,
+			token: last,
+		},
+		tokType: repeat,
+	}
+}
+
+func parseRepeatingSpecfic(ctx *PContext, regInput string) {
+	startIndex := ctx.index + 1
+
+	for regInput[ctx.index] != '}' {
+		ctx.index++
+	}
+
+	boundary := regInput[startIndex:ctx.index]
+	pieces := strings.Split(boundary, ",")
+
+	var min int
+	var max int
+	if len(pieces) == 1 { // <3>
+		if value, err := strconv.Atoi(pieces[0]); err != nil {
+			panic(err.Error())
+		} else {
+			min = value
+			max = value
+		}
+	} else if len(pieces) == 2 { // <4>
+		if value, err := strconv.Atoi(pieces[0]); err != nil {
+			panic(err.Error())
+		} else {
+			min = value
+		}
+
+		if pieces[1] == "" {
+			max = -1
+		} else if value, err := strconv.Atoi(pieces[1]); err != nil {
+			panic(err.Error())
+		} else {
+			max = value
+		}
+	} else {
+		panic(fmt.Sprintf("There must be either 1 or 2 values specified for the quantifier: provided '%s'", boundary))
+	}
+
+	lastToken := ctx.tokens[len(ctx.tokens)-1]
+	ctx.tokens[len(ctx.tokens)-1] = Token{
+		val: RepeatPayload{
+			min:   min,
+			max:   max,
+			token: lastToken,
+		},
+		tokType: repeat,
+	}
 }

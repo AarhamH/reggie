@@ -14,6 +14,12 @@ type Token struct {
 	tokType uint8
 }
 
+type RepeatPayload struct {
+	min   int
+	max   int
+	token Token
+}
+
 type PContext struct {
 	tokens []Token
 	index  int
