@@ -8,31 +8,31 @@ import (
 
 func parse(regInput string) *PContext {
 	ctx := &PContext{
-		tokens: []Token{},
-		index:  0,
+		Tokens: []Token{},
+		Index:  0,
 	}
 
-	for ctx.index < len(regInput) {
+	for ctx.Index < len(regInput) {
 		buildTokens(ctx, regInput)
-		ctx.index++
+		ctx.Index++
 	}
 
 	return ctx
 }
 
 func buildTokens(ctx *PContext, regInput string) {
-	regChar := regInput[ctx.index]
+	regChar := regInput[ctx.Index]
 
 	switch regChar {
 	case '(':
 		groupPContext := &PContext{
-			index:  ctx.index,
-			tokens: []Token{},
+			Index:  ctx.Index,
+			Tokens: []Token{},
 		}
 		parseGroup(groupPContext, regInput)
-		ctx.tokens = append(ctx.tokens, Token{
-			val:     groupPContext.tokens,
-			tokType: group,
+		ctx.Tokens = append(ctx.Tokens, Token{
+			Val:     groupPContext.Tokens,
+			TokType: Group,
 		})
 	case '[':
 		parseBracket(ctx, regInput)
@@ -44,41 +44,41 @@ func buildTokens(ctx *PContext, regInput string) {
 		parseRepeating(ctx, regInput)
 	default:
 		token := Token{
-			val:     regChar,
-			tokType: literal,
+			Val:     regChar,
+			TokType: Literal,
 		}
 
-		ctx.tokens = append(ctx.tokens, token)
+		ctx.Tokens = append(ctx.Tokens, token)
 	}
 }
 
 func parseGroup(ctx *PContext, regInput string) {
-	ctx.index++
-	for regInput[ctx.index] != ')' {
+	ctx.Index++
+	for regInput[ctx.Index] != ')' {
 		buildTokens(ctx, regInput)
-		ctx.index++
+		ctx.Index++
 	}
 }
 
 func parseBracket(ctx *PContext, regInput string) {
-	ctx.index++
+	ctx.Index++
 	var literals []string
-	for regInput[ctx.index] != ']' {
-		regChar := regInput[ctx.index]
+	for regInput[ctx.Index] != ']' {
+		regChar := regInput[ctx.Index]
 
 		if regChar == '-' {
 			literalLastIndex := len(literals) - 1
 
-			next := regInput[ctx.index+1]
+			next := regInput[ctx.Index+1]
 			prev := literals[literalLastIndex][0]
 
 			literals[literalLastIndex] = fmt.Sprintf("%c%c", prev, next)
-			ctx.index++
+			ctx.Index++
 		} else {
 			literals = append(literals, fmt.Sprintf("%c", regChar))
 		}
 
-		ctx.index++
+		ctx.Index++
 	}
 
 	literalsSet := map[uint8]bool{}
@@ -89,44 +89,44 @@ func parseBracket(ctx *PContext, regInput string) {
 		}
 	}
 
-	ctx.tokens = append(ctx.tokens, Token{
-		val:     literalsSet,
-		tokType: bracket,
+	ctx.Tokens = append(ctx.Tokens, Token{
+		Val:     literalsSet,
+		TokType: Bracket,
 	})
 }
 
 func parseOr(ctx *PContext, regInput string) {
 	rightContext := &PContext{
-		index:  ctx.index,
-		tokens: []Token{},
+		Index:  ctx.Index,
+		Tokens: []Token{},
 	}
 
-	rightContext.index++
+	rightContext.Index++
 
-	for rightContext.index < len(regInput) && regInput[rightContext.index] != ')' {
+	for rightContext.Index < len(regInput) && regInput[rightContext.Index] != ')' {
 		buildTokens(rightContext, regInput)
-		rightContext.index++
+		rightContext.Index++
 	}
 
 	leftToken := Token{
-		val:     ctx.tokens,
-		tokType: groupUncap,
+		Val:     ctx.Tokens,
+		TokType: GroupUncap,
 	}
 
 	rightToken := Token{
-		val:     rightContext.tokens,
-		tokType: groupUncap,
+		Val:     rightContext.Tokens,
+		TokType: GroupUncap,
 	}
 
-	ctx.index = rightContext.index
-	ctx.tokens = []Token{{
-		val:     []Token{leftToken, rightToken},
-		tokType: or,
+	ctx.Index = rightContext.Index
+	ctx.Tokens = []Token{{
+		Val:     []Token{leftToken, rightToken},
+		TokType: Or,
 	}}
 }
 
 func parseRepeating(ctx *PContext, regInput string) {
-	regChar := regInput[ctx.index]
+	regChar := regInput[ctx.Index]
 
 	var min int
 	var max int
@@ -142,27 +142,27 @@ func parseRepeating(ctx *PContext, regInput string) {
 		max = -1
 	}
 
-	lastTokenIndex := len(ctx.tokens) - 1
-	last := ctx.tokens[lastTokenIndex]
+	lastTokenIndex := len(ctx.Tokens) - 1
+	last := ctx.Tokens[lastTokenIndex]
 
-	ctx.tokens[lastTokenIndex] = Token{
-		val: RepeatPayload{
-			min:   min,
-			max:   max,
-			token: last,
+	ctx.Tokens[lastTokenIndex] = Token{
+		Val: RepeatPayload{
+			Min:   min,
+			Max:   max,
+			Token: last,
 		},
-		tokType: repeat,
+		TokType: Repeat,
 	}
 }
 
 func parseRepeatingSpecfic(ctx *PContext, regInput string) {
-	startIndex := ctx.index + 1
+	startIndex := ctx.Index + 1
 
-	for regInput[ctx.index] != '}' {
-		ctx.index++
+	for regInput[ctx.Index] != '}' {
+		ctx.Index++
 	}
 
-	boundary := regInput[startIndex:ctx.index]
+	boundary := regInput[startIndex:ctx.Index]
 	pieces := strings.Split(boundary, ",")
 
 	var min int
@@ -192,13 +192,13 @@ func parseRepeatingSpecfic(ctx *PContext, regInput string) {
 		panic(fmt.Sprintf("There must be either 1 or 2 values specified for the quantifier: provided '%s'", boundary))
 	}
 
-	lastToken := ctx.tokens[len(ctx.tokens)-1]
-	ctx.tokens[len(ctx.tokens)-1] = Token{
-		val: RepeatPayload{
-			min:   min,
-			max:   max,
-			token: lastToken,
+	lastToken := ctx.Tokens[len(ctx.Tokens)-1]
+	ctx.Tokens[len(ctx.Tokens)-1] = Token{
+		Val: RepeatPayload{
+			Min:   min,
+			Max:   max,
+			Token: lastToken,
 		},
-		tokType: repeat,
+		TokType: Repeat,
 	}
 }

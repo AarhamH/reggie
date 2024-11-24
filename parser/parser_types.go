@@ -1,26 +1,26 @@
 package parser
 
 const (
-	group      uint8 = iota
-	bracket    uint8 = iota
-	repeat     uint8 = iota
-	or         uint8 = iota
-	literal    uint8 = iota
-	groupUncap uint8 = iota
+	Group      uint8 = iota
+	Bracket    uint8 = iota
+	Repeat     uint8 = iota
+	Or         uint8 = iota
+	Literal    uint8 = iota
+	GroupUncap uint8 = iota
 )
 
 type Token struct {
-	val     interface{}
-	tokType uint8
+	Val     interface{}
+	TokType uint8
 }
 
 type RepeatPayload struct {
-	min   int
-	max   int
-	token Token
+	Min   int
+	Max   int
+	Token Token
 }
 
 type PContext struct {
-	tokens []Token
-	index  int
+	Tokens []Token
+	Index  int
 }
