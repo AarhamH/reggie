@@ -1,5 +1,9 @@
 package parser
 
+import (
+	"fmt"
+)
+
 func parse(regInput string) *PContext {
 	ctx := &PContext{
 		tokens: []Token{},
@@ -7,10 +11,28 @@ func parse(regInput string) *PContext {
 	}
 
 	for ctx.index < len(regInput) {
-		// process the regex
-
+		buildTokens(ctx, regInput)
 		ctx.index++
 	}
 
 	return ctx
+}
+
+func buildTokens(ctx *PContext, regInput string) {
+	regChar := regInput[ctx.index]
+
+	switch regChar {
+	case '(':
+		fmt.Println("Character is a (")
+	case '[':
+		fmt.Println("Character is a [")
+	case '{':
+		fmt.Println("Character is a {")
+	case '|':
+		fmt.Println("Character is a |")
+	case '*', '?', '+':
+		fmt.Println("Character is a *, or ? or +")
+	default:
+		fmt.Println("Character is... something")
+	}
 }
