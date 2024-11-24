@@ -23,7 +23,15 @@ func buildTokens(ctx *PContext, regInput string) {
 
 	switch regChar {
 	case '(':
-		fmt.Println("Character is a (")
+		groupPContext := &PContext{
+			index:  ctx.index,
+			tokens: []Token{},
+		}
+		parseGroup(groupPContext, regInput)
+		ctx.tokens = append(ctx.tokens, Token{
+			val:     groupPContext.tokens,
+			tokType: group,
+		})
 	case '[':
 		fmt.Println("Character is a [")
 	case '{':
@@ -34,5 +42,13 @@ func buildTokens(ctx *PContext, regInput string) {
 		fmt.Println("Character is a *, or ? or +")
 	default:
 		fmt.Println("Character is... something")
+	}
+}
+
+func parseGroup(ctx *PContext, regInput string) {
+	ctx.index++
+	for regInput[ctx.index] != ')' {
+		buildTokens(ctx, regInput)
+		ctx.index++
 	}
 }
