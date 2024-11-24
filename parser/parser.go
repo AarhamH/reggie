@@ -1,6 +1,6 @@
 package parser
 
-func parse(regInput string) {
+func parse(regInput string) *PContext {
 	ctx := &PContext{
 		tokens: []Token{},
 		index:  0,
@@ -11,4 +11,6 @@ func parse(regInput string) {
 
 		ctx.index++
 	}
+
+	return ctx
 }
