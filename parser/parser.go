@@ -37,7 +37,7 @@ func buildTokens(ctx *PContext, regInput string) {
 	case '{':
 		fmt.Println("Character is a {")
 	case '|':
-		fmt.Println("Character is a |")
+		parseOr(ctx, regInput)
 	case '*', '?', '+':
 		fmt.Println("Character is a *, or ? or +")
 	default:
@@ -86,4 +86,34 @@ func parseBracket(ctx *PContext, regInput string) {
 		val:     literalsSet,
 		tokType: bracket,
 	})
+}
+
+func parseOr(ctx *PContext, regInput string) {
+	rightContext := &PContext{
+		index:  ctx.index,
+		tokens: []Token{},
+	}
+
+	rightContext.index++
+
+	for rightContext.index < len(regInput) && regInput[rightContext.index] != ')' {
+		buildTokens(rightContext, regInput)
+		rightContext.index++
+	}
+
+	leftToken := Token{
+		val:     ctx.tokens,
+		tokType: groupUncap,
+	}
+
+	rightToken := Token{
+		val:     rightContext.tokens,
+		tokType: groupUncap,
+	}
+
+	ctx.index = rightContext.index
+	ctx.tokens = []Token{{
+		val:     []Token{leftToken, rightToken},
+		tokType: or,
+	}}
 }
