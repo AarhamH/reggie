@@ -41,7 +41,12 @@ func buildTokens(ctx *PContext, regInput string) {
 	case '*', '?', '+':
 		fmt.Println("Character is a *, or ? or +")
 	default:
-		fmt.Println("Character is... something")
+		token := Token{
+			val:     regChar,
+			tokType: literal,
+		}
+
+		ctx.tokens = append(ctx.tokens, token)
 	}
 }
 
