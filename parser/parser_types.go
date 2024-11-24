@@ -13,3 +13,8 @@ type Token struct {
 	val     interface{}
 	tokType uint8
 }
+
+type PContext struct {
+	tokens []Token
+	index  int
+}
