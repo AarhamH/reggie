@@ -33,7 +33,7 @@ func buildTokens(ctx *PContext, regInput string) {
 			tokType: group,
 		})
 	case '[':
-		fmt.Println("Character is a [")
+		parseBracket(ctx, regInput)
 	case '{':
 		fmt.Println("Character is a {")
 	case '|':
@@ -51,4 +51,39 @@ func parseGroup(ctx *PContext, regInput string) {
 		buildTokens(ctx, regInput)
 		ctx.index++
 	}
+}
+
+func parseBracket(ctx *PContext, regInput string) {
+	ctx.index++
+	var literals []string
+	for regInput[ctx.index] != ']' {
+		regChar := regInput[ctx.index]
+
+		if regChar == '-' {
+			literalLastIndex := len(literals) - 1
+
+			next := regInput[ctx.index+1]
+			prev := literals[literalLastIndex][0]
+
+			literals[literalLastIndex] = fmt.Sprintf("%c%c", prev, next)
+			ctx.index++
+		} else {
+			literals = append(literals, fmt.Sprintf("%c", regChar))
+		}
+
+		ctx.index++
+	}
+
+	literalsSet := map[uint8]bool{}
+
+	for _, l := range literals {
+		for i := l[0]; i <= l[len(l)-1]; i++ {
+			literalsSet[i] = true
+		}
+	}
+
+	ctx.tokens = append(ctx.tokens, Token{
+		val:     literalsSet,
+		tokType: bracket,
+	})
 }
