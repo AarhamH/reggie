@@ -1,7 +1,7 @@
 package graph
 
 type States struct {
-	start       bool
-	end         bool // if this is true, the regex matches
-	transitions map[uint8][]*States
+	Start       bool
+	End         bool // if this is true, the regex matches
+	Transitions map[uint8][]*States
 }

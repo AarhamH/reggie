@@ -8,11 +8,11 @@ const EPSILON uint8 = 0
 
 func tokenToFSA(t *parser.Token) (*States, *States) {
 	start := &States{
-		transitions: map[uint8][]*States{},
+		Transitions: map[uint8][]*States{},
 	}
 
 	end := &States{
-		transitions: map[uint8][]*States{},
+		Transitions: map[uint8][]*States{},
 	}
 
 	switch t.TokType {
@@ -35,7 +35,7 @@ func tokenToFSA(t *parser.Token) (*States, *States) {
 
 func literalFSA(t *parser.Token, s *States, e *States) {
 	char := t.Val.(uint8)
-	s.transitions[char] = []*States{e}
+	s.Transitions[char] = []*States{e}
 }
 
 func orFSA(t *parser.Token, s *States, e *States) {
@@ -46,16 +46,16 @@ func orFSA(t *parser.Token, s *States, e *States) {
 	s1, e1 := tokenToFSA(&left)
 	s2, e2 := tokenToFSA(&right)
 
-	s.transitions[EPSILON] = []*States{s1, s2}
-	e1.transitions[EPSILON] = []*States{e}
-	e2.transitions[EPSILON] = []*States{e}
+	s.Transitions[EPSILON] = []*States{s1, s2}
+	e1.Transitions[EPSILON] = []*States{e}
+	e2.Transitions[EPSILON] = []*States{e}
 }
 
 func bracketFSA(t *parser.Token, s *States, e *States) {
 	literals := t.Val.(map[uint8]bool)
 
 	for l := range literals {
-		s.transitions[l] = []*States{e}
+		s.Transitions[l] = []*States{e}
 	}
 }
 
@@ -65,7 +65,7 @@ func groupFSA(t *parser.Token, s *States, e *States) {
 
 	for i := 1; i < len(tokens); i++ {
 		ts, te := tokenToFSA(&tokens[i])
-		e.transitions[EPSILON] = append(e.transitions[EPSILON], ts)
+		e.Transitions[EPSILON] = append(e.Transitions[EPSILON], ts)
 		e = te
 	}
 }
@@ -74,7 +74,7 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 	p := t.Val.(parser.RepeatPayload)
 
 	if p.Min == 0 { // <1>
-		s.transitions[EPSILON] = []*States{e}
+		s.Transitions[EPSILON] = []*States{e}
 	}
 
 	var copyCount int // <2>
@@ -90,16 +90,16 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 	}
 
 	from, to := tokenToFSA(&p.Token)
-	s.transitions[EPSILON] = append(
-		s.transitions[EPSILON],
+	s.Transitions[EPSILON] = append(
+		s.Transitions[EPSILON],
 		from,
 	)
 
 	for i := 2; i <= copyCount; i++ {
 		s, e := tokenToFSA(&p.Token)
 
-		to.transitions[EPSILON] = append(
-			to.transitions[EPSILON],
+		to.Transitions[EPSILON] = append(
+			to.Transitions[EPSILON],
 			s,
 		)
 
@@ -107,21 +107,21 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 		to = e
 
 		if i > p.Min {
-			s.transitions[EPSILON] = append(
-				s.transitions[EPSILON],
+			s.Transitions[EPSILON] = append(
+				s.Transitions[EPSILON],
 				e,
 			)
 		}
 	}
 
-	to.transitions[EPSILON] = append( // <9>
-		to.transitions[EPSILON],
+	to.Transitions[EPSILON] = append( // <9>
+		to.Transitions[EPSILON],
 		e,
 	)
 
 	if p.Max == -1 { // <10>
-		e.transitions[EPSILON] = append(
-			e.transitions[EPSILON],
+		e.Transitions[EPSILON] = append(
+			e.Transitions[EPSILON],
 			from,
 		)
 	}
