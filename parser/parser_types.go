@@ -9,6 +9,8 @@ const (
 	GroupUncap uint8 = iota
 )
 
+const REPEAT_INDEX = -1
+
 type Token struct {
 	Val     interface{}
 	TokType uint8
@@ -23,4 +25,18 @@ type RepeatPayload struct {
 type PContext struct {
 	Tokens []Token
 	Index  int
+}
+
+// Context Type implementations
+func (p *PContext) position() int {
+	return p.Index
+}
+
+func (p *PContext) increment() int {
+	p.Index++
+	return p.Index
+}
+
+func (p *PContext) pushToken(token Token) {
+	p.Tokens = append(p.Tokens, token)
 }
