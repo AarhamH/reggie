@@ -25,6 +25,7 @@ func tokenToFSA(t *parser.Token) (*States, *States) {
 	case parser.Group, parser.GroupUncap:
 		groupFSA(t, start, end)
 	case parser.Repeat:
+		repeatFSA(t, start, end)
 	default:
 		panic("Token type not known")
 	}
@@ -66,5 +67,62 @@ func groupFSA(t *parser.Token, s *States, e *States) {
 		ts, te := tokenToFSA(&tokens[i])
 		e.transitions[EPSILON] = append(e.transitions[EPSILON], ts)
 		e = te
+	}
+}
+
+func repeatFSA(t *parser.Token, s *States, e *States) {
+	p := t.Val.(parser.RepeatPayload)
+
+	if p.Min == 0 { // <1>
+		s.transitions[EPSILON] = []*States{e}
+	}
+
+	var copyCount int // <2>
+
+	if p.Max == -1 {
+		if p.Min == 0 {
+			copyCount = 1
+		} else {
+			copyCount = p.Min
+		}
+	} else {
+		copyCount = p.Max
+	}
+
+	from, to := tokenToFSA(&p.Token)
+	s.transitions[EPSILON] = append(
+		s.transitions[EPSILON],
+		from,
+	)
+
+	for i := 2; i <= copyCount; i++ {
+		s, e := tokenToFSA(&p.Token)
+
+		to.transitions[EPSILON] = append(
+			to.transitions[EPSILON],
+			s,
+		)
+
+		from = s
+		to = e
+
+		if i > p.Min {
+			s.transitions[EPSILON] = append(
+				s.transitions[EPSILON],
+				e,
+			)
+		}
+	}
+
+	to.transitions[EPSILON] = append( // <9>
+		to.transitions[EPSILON],
+		e,
+	)
+
+	if p.Max == -1 { // <10>
+		e.transitions[EPSILON] = append(
+			e.transitions[EPSILON],
+			from,
+		)
 	}
 }
