@@ -24,3 +24,17 @@ type PContext struct {
 	Tokens []Token
 	Index  int
 }
+
+// Context Type implementations
+func (p *PContext) position() int {
+	return p.Index
+}
+
+func (p *PContext) increment() int {
+	p.Index++
+	return p.Index
+}
+
+func (p *PContext) incrementTo(newIndex int) {
+	p.Index = newIndex
+}
