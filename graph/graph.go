@@ -6,6 +6,37 @@ import (
 
 const EPSILON uint8 = 0
 
+func ToGraph(ctx *parser.PContext) *States {
+	startState, endState := tokenToFSA(&ctx.Tokens[0]) // <1>
+
+	for i := 1; i < len(ctx.Tokens); i++ { // <2>
+		startNext, endNext := tokenToFSA(&ctx.Tokens[i]) // <3>
+		endState.Transitions[EPSILON] = append(
+			endState.Transitions[EPSILON],
+			startNext,
+		) // <4>
+		endState = endNext // <5>
+	}
+
+	start := &States{ // <6>
+		Transitions: map[uint8][]*States{
+			EPSILON: {startState},
+		},
+		Start: true,
+	}
+	end := &States{ // 7
+		Transitions: map[uint8][]*States{},
+		End:         true,
+	}
+
+	endState.Transitions[EPSILON] = append(
+		endState.Transitions[EPSILON],
+		end,
+	)
+
+	return start
+}
+
 func tokenToFSA(t *parser.Token) (*States, *States) {
 	start := &States{
 		Transitions: map[uint8][]*States{},

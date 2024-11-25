@@ -17,7 +17,7 @@ func getChar(input string, pos int) uint8 {
 	return input[pos]
 }
 
-func (s *States) check(input string, pos int) bool {
+func (s *States) Check(input string, pos int) bool {
 	ch := getChar(input, pos)
 
 	if ch == endOfText && s.End {
@@ -26,17 +26,17 @@ func (s *States) check(input string, pos int) bool {
 
 	if states := s.Transitions[ch]; len(states) > 0 {
 		nextState := states[0]
-		if nextState.check(input, pos+1) {
+		if nextState.Check(input, pos+1) {
 			return true
 		}
 	}
 
 	for _, state := range s.Transitions[EPSILON] {
-		if state.check(input, pos) {
+		if state.Check(input, pos) {
 			return true
 		}
 
-		if ch == startOfText && state.check(input, pos+1) {
+		if ch == startOfText && state.Check(input, pos+1) {
 			return true
 		}
 	}
