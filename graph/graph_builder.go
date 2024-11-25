@@ -75,7 +75,7 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 
 	var copyCount int
 
-	if p.Max == -1 {
+	if p.Max == parser.REPEAT_INDEX {
 		if p.Min == 0 {
 			copyCount = 1
 		} else {
@@ -115,7 +115,7 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 		e,
 	)
 
-	if p.Max == -1 {
+	if p.Max == parser.REPEAT_INDEX {
 		e.Transitions[EPSILON] = append(
 			e.Transitions[EPSILON],
 			from,

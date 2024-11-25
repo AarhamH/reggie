@@ -9,6 +9,8 @@ const (
 	GroupUncap uint8 = iota
 )
 
+const REPEAT_INDEX = -1
+
 type Token struct {
 	Val     interface{}
 	TokType uint8

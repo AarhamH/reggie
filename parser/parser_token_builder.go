@@ -119,13 +119,13 @@ func parseRepeating(ctx *PContext, regInput string) {
 
 	if regChar == '*' {
 		min = 0
-		max = -1
+		max = REPEAT_INDEX
 	} else if regChar == '?' {
 		min = 0
 		max = 1
 	} else {
 		min = 1
-		max = -1
+		max = REPEAT_INDEX
 	}
 
 	lastTokenIndex := len(ctx.Tokens) - 1
@@ -168,7 +168,7 @@ func parseRepeatingSpecfic(ctx *PContext, regInput string) {
 		}
 
 		if pieces[1] == "" {
-			max = -1
+			max = REPEAT_INDEX
 		} else if value, err := strconv.Atoi(pieces[1]); err != nil {
 			panic(err.Error())
 		} else {
