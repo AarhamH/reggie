@@ -21,7 +21,9 @@ func tokenToFSA(t *parser.Token) (*States, *States) {
 	case parser.Or:
 		orFSA(t, start, end)
 	case parser.Bracket:
+		bracketFSA(t, start, end)
 	case parser.Group, parser.GroupUncap:
+		groupFSA(t, start, end)
 	case parser.Repeat:
 	default:
 		panic("Token type not known")
@@ -46,4 +48,23 @@ func orFSA(t *parser.Token, s *States, e *States) {
 	s.transitions[EPSILON] = []*States{s1, s2}
 	e1.transitions[EPSILON] = []*States{e}
 	e2.transitions[EPSILON] = []*States{e}
+}
+
+func bracketFSA(t *parser.Token, s *States, e *States) {
+	literals := t.Val.(map[uint8]bool)
+
+	for l := range literals {
+		s.transitions[l] = []*States{e}
+	}
+}
+
+func groupFSA(t *parser.Token, s *States, e *States) {
+	tokens := t.Val.([]parser.Token)
+	s, e = tokenToFSA(&tokens[0])
+
+	for i := 1; i < len(tokens); i++ {
+		ts, te := tokenToFSA(&tokens[i])
+		e.transitions[EPSILON] = append(e.transitions[EPSILON], ts)
+		e = te
+	}
 }
