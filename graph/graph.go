@@ -14,17 +14,17 @@ func ToGraph(ctx *parser.PContext) *States {
 		endState.Transitions[EPSILON] = append(
 			endState.Transitions[EPSILON],
 			startNext,
-		) // <4>
-		endState = endNext // <5>
+		)
+		endState = endNext
 	}
 
-	start := &States{ // <6>
+	start := &States{
 		Transitions: map[uint8][]*States{
 			EPSILON: {startState},
 		},
 		Start: true,
 	}
-	end := &States{ // 7
+	end := &States{
 		Transitions: map[uint8][]*States{},
 		End:         true,
 	}
