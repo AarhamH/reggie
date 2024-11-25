@@ -37,6 +37,6 @@ func (p *PContext) increment() int {
 	return p.Index
 }
 
-func (p *PContext) incrementTo(newIndex int) {
-	p.Index = newIndex
+func (p *PContext) pushToken(token Token) {
+	p.Tokens = append(p.Tokens, token)
 }

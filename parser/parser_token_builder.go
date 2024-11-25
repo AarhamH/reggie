@@ -16,10 +16,11 @@ func buildTokens(ctx *PContext, regInput string) {
 			Tokens: []Token{},
 		}
 		parseGroup(groupPContext, regInput)
-		ctx.Tokens = append(ctx.Tokens, Token{
+		token := Token{
 			Val:     groupPContext.Tokens,
 			TokType: Group,
-		})
+		}
+		ctx.pushToken(token)
 	case '[':
 		parseBracket(ctx, regInput)
 	case '{':
@@ -34,20 +35,20 @@ func buildTokens(ctx *PContext, regInput string) {
 			TokType: Literal,
 		}
 
-		ctx.Tokens = append(ctx.Tokens, token)
+		ctx.pushToken(token)
 	}
 }
 
 func parseGroup(ctx *PContext, regInput string) {
-	ctx.Index++
+	ctx.increment()
 	for regInput[ctx.Index] != ')' {
 		buildTokens(ctx, regInput)
-		ctx.Index++
+		ctx.increment()
 	}
 }
 
 func parseBracket(ctx *PContext, regInput string) {
-	ctx.Index++
+	ctx.increment()
 	var literals []string
 	for regInput[ctx.Index] != ']' {
 		regChar := regInput[ctx.Index]
@@ -59,12 +60,12 @@ func parseBracket(ctx *PContext, regInput string) {
 			prev := literals[literalLastIndex][0]
 
 			literals[literalLastIndex] = fmt.Sprintf("%c%c", prev, next)
-			ctx.Index++
+			ctx.increment()
 		} else {
 			literals = append(literals, fmt.Sprintf("%c", regChar))
 		}
 
-		ctx.Index++
+		ctx.increment()
 	}
 
 	literalsSet := map[uint8]bool{}
@@ -74,11 +75,12 @@ func parseBracket(ctx *PContext, regInput string) {
 			literalsSet[i] = true
 		}
 	}
-
-	ctx.Tokens = append(ctx.Tokens, Token{
+	token := Token{
 		Val:     literalsSet,
 		TokType: Bracket,
-	})
+	}
+
+	ctx.pushToken(token)
 }
 
 func parseOr(ctx *PContext, regInput string) {
@@ -145,7 +147,7 @@ func parseRepeatingSpecfic(ctx *PContext, regInput string) {
 	startIndex := ctx.Index + 1
 
 	for regInput[ctx.Index] != '}' {
-		ctx.Index++
+		ctx.increment()
 	}
 
 	boundary := regInput[startIndex:ctx.Index]
@@ -153,14 +155,14 @@ func parseRepeatingSpecfic(ctx *PContext, regInput string) {
 
 	var min int
 	var max int
-	if len(pieces) == 1 { // <3>
+	if len(pieces) == 1 {
 		if value, err := strconv.Atoi(pieces[0]); err != nil {
 			panic(err.Error())
 		} else {
 			min = value
 			max = value
 		}
-	} else if len(pieces) == 2 { // <4>
+	} else if len(pieces) == 2 {
 		if value, err := strconv.Atoi(pieces[0]); err != nil {
 			panic(err.Error())
 		} else {
