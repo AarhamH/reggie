@@ -9,10 +9,7 @@ func ToGraph(ctx *parser.PContext) *States {
 
 	for i := 1; i < len(ctx.Tokens); i++ {
 		startNext, endNext := tokenToFSA(&ctx.Tokens[i])
-		endState.Transitions[EPSILON] = append(
-			endState.Transitions[EPSILON],
-			startNext,
-		)
+		endState.pushTransition(EPSILON, startNext)
 		endState = endNext
 	}
 
@@ -27,10 +24,7 @@ func ToGraph(ctx *parser.PContext) *States {
 		End:         true,
 	}
 
-	endState.Transitions[EPSILON] = append(
-		endState.Transitions[EPSILON],
-		end,
-	)
+	endState.pushTransition(EPSILON, end)
 
 	return start
 }

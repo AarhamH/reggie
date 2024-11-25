@@ -7,3 +7,7 @@ type States struct {
 }
 
 const EPSILON uint8 = 0
+
+func (s *States) pushTransition(transitionIndex uint8, to *States) {
+	s.Transitions[transitionIndex] = append(s.Transitions[transitionIndex], to)
+}

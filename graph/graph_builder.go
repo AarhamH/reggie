@@ -61,7 +61,7 @@ func groupFSA(t *parser.Token, s *States, e *States) {
 
 	for i := 1; i < len(tokens); i++ {
 		ts, te := tokenToFSA(&tokens[i])
-		e.Transitions[EPSILON] = append(e.Transitions[EPSILON], ts)
+		e.pushTransition(EPSILON, ts)
 		e = te
 	}
 }
@@ -86,39 +86,23 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 	}
 
 	from, to := tokenToFSA(&p.Token)
-	s.Transitions[EPSILON] = append(
-		s.Transitions[EPSILON],
-		from,
-	)
+	s.pushTransition(EPSILON, from)
 
 	for i := 2; i <= copyCount; i++ {
 		s, e := tokenToFSA(&p.Token)
 
-		to.Transitions[EPSILON] = append(
-			to.Transitions[EPSILON],
-			s,
-		)
+		to.pushTransition(EPSILON, s)
 
 		from = s
 		to = e
 
 		if i > p.Min {
-			s.Transitions[EPSILON] = append(
-				s.Transitions[EPSILON],
-				e,
-			)
+			s.pushTransition(EPSILON, e)
 		}
 	}
-
-	to.Transitions[EPSILON] = append(
-		to.Transitions[EPSILON],
-		e,
-	)
+	to.pushTransition(EPSILON, e)
 
 	if p.Max == parser.REPEAT_INDEX {
-		e.Transitions[EPSILON] = append(
-			e.Transitions[EPSILON],
-			from,
-		)
+		e.pushTransition(EPSILON, from)
 	}
 }
