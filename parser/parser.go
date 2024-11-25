@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func parse(regInput string) *PContext {
+func Parse(regInput string) *PContext {
 	ctx := &PContext{
 		Tokens: []Token{},
 		Index:  0,
