@@ -4,13 +4,11 @@ import (
 	parser "tinyreg/parser"
 )
 
-const EPSILON uint8 = 0
-
 func ToGraph(ctx *parser.PContext) *States {
-	startState, endState := tokenToFSA(&ctx.Tokens[0]) // <1>
+	startState, endState := tokenToFSA(&ctx.Tokens[0])
 
-	for i := 1; i < len(ctx.Tokens); i++ { // <2>
-		startNext, endNext := tokenToFSA(&ctx.Tokens[i]) // <3>
+	for i := 1; i < len(ctx.Tokens); i++ {
+		startNext, endNext := tokenToFSA(&ctx.Tokens[i])
 		endState.Transitions[EPSILON] = append(
 			endState.Transitions[EPSILON],
 			startNext,
@@ -104,11 +102,11 @@ func groupFSA(t *parser.Token, s *States, e *States) {
 func repeatFSA(t *parser.Token, s *States, e *States) {
 	p := t.Val.(parser.RepeatPayload)
 
-	if p.Min == 0 { // <1>
+	if p.Min == 0 {
 		s.Transitions[EPSILON] = []*States{e}
 	}
 
-	var copyCount int // <2>
+	var copyCount int
 
 	if p.Max == -1 {
 		if p.Min == 0 {
@@ -145,12 +143,12 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 		}
 	}
 
-	to.Transitions[EPSILON] = append( // <9>
+	to.Transitions[EPSILON] = append(
 		to.Transitions[EPSILON],
 		e,
 	)
 
-	if p.Max == -1 { // <10>
+	if p.Max == -1 {
 		e.Transitions[EPSILON] = append(
 			e.Transitions[EPSILON],
 			from,
