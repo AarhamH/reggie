@@ -1,8 +1,11 @@
 package graph
 
-import parser "tinyreg/parser"
+import (
+	parser "tinyreg/parser"
+	regerrors "tinyreg/regerrors"
+)
 
-func tokenToFSA(t *parser.Token) (*States, *States) {
+func tokenToFSA(t *parser.Token) (*States, *States, *regerrors.RegexError) {
 	start := &States{
 		Transitions: map[uint8][]*States{},
 	}
@@ -26,12 +29,20 @@ func tokenToFSA(t *parser.Token) (*States, *States) {
 		panic("Token type not known")
 	}
 
-	return start, end
+	return start, end, nil
 }
 
-func literalFSA(t *parser.Token, s *States, e *States) {
+func literalFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
+	if t == nil || s == nil || e == nil {
+		return &regerrors.RegexError{
+			Code:    "Graph Error",
+			Message: "Cannot build graph with nil token, start, and/or end states",
+		}
+	}
 	char := t.Val.(uint8)
 	s.Transitions[char] = []*States{e}
+
+	return nil
 }
 
 func orFSA(t *parser.Token, s *States, e *States) {
@@ -39,8 +50,8 @@ func orFSA(t *parser.Token, s *States, e *States) {
 	left := vals[0]
 	right := vals[1]
 
-	s1, e1 := tokenToFSA(&left)
-	s2, e2 := tokenToFSA(&right)
+	s1, e1, _ := tokenToFSA(&left)
+	s2, e2, _ := tokenToFSA(&right)
 
 	s.Transitions[EPSILON] = []*States{s1, s2}
 	e1.Transitions[EPSILON] = []*States{e}
@@ -57,10 +68,10 @@ func bracketFSA(t *parser.Token, s *States, e *States) {
 
 func groupFSA(t *parser.Token, s *States, e *States) {
 	tokens := t.Val.([]parser.Token)
-	s, e = tokenToFSA(&tokens[0])
+	s, e, _ = tokenToFSA(&tokens[0])
 
 	for i := 1; i < len(tokens); i++ {
-		ts, te := tokenToFSA(&tokens[i])
+		ts, te, _ := tokenToFSA(&tokens[i])
 		e.pushTransition(EPSILON, ts)
 		e = te
 	}
@@ -85,11 +96,11 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 		copyCount = p.Max
 	}
 
-	from, to := tokenToFSA(&p.Token)
+	from, to, _ := tokenToFSA(&p.Token)
 	s.pushTransition(EPSILON, from)
 
 	for i := 2; i <= copyCount; i++ {
-		s, e := tokenToFSA(&p.Token)
+		s, e, _ := tokenToFSA(&p.Token)
 
 		to.pushTransition(EPSILON, s)
 
