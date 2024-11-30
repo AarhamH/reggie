@@ -74,6 +74,12 @@ func parseGroup(ctx *PContext, regInput string) *regerrors.RegexError {
 }
 
 func parseBracket(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: "Trying to parse bracket with a nil context",
+		}
+	}
 	ctx.increment()
 
 	if ctx.Index >= len(regInput) || regInput[ctx.Index] == ']' {
