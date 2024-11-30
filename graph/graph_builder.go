@@ -20,7 +20,6 @@ func tokenToFSA(t *parser.Token) (*States, *States, *regerrors.RegexError) {
 		if err != nil {
 			return nil, nil, err
 		}
-
 	case parser.Or:
 		err := orFSA(t, start, end)
 		if err != nil {
@@ -28,7 +27,11 @@ func tokenToFSA(t *parser.Token) (*States, *States, *regerrors.RegexError) {
 		}
 
 	case parser.Bracket:
-		bracketFSA(t, start, end)
+		err := bracketFSA(t, start, end)
+		if err != nil {
+			return nil, nil, err
+		}
+
 	case parser.Group, parser.GroupUncap:
 		groupFSA(t, start, end)
 	case parser.Repeat:
@@ -82,12 +85,27 @@ func orFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
 	return nil
 }
 
-func bracketFSA(t *parser.Token, s *States, e *States) {
+func bracketFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
+	if t == nil || s == nil || e == nil {
+		return &regerrors.RegexError{
+			Code:    "Graph Error",
+			Message: "Cannot build graph with nil token, start, and/or end states",
+		}
+	}
+
 	literals := t.Val.(map[uint8]bool)
+	if literals == nil {
+		return &regerrors.RegexError{
+			Code:    "Graph Error",
+			Message: "Literals set is nil",
+		}
+	}
 
 	for l := range literals {
 		s.Transitions[l] = []*States{e}
 	}
+
+	return nil
 }
 
 func groupFSA(t *parser.Token, s *States, e *States) {
