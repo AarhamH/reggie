@@ -16,7 +16,11 @@ func buildTokens(ctx *PContext, regInput string) *regerrors.RegexError {
 			Index:  ctx.Index,
 			Tokens: []Token{},
 		}
-		parseGroup(groupPContext, regInput)
+		err := parseGroup(groupPContext, regInput)
+		if err != nil {
+			return err
+		}
+
 		token := Token{
 			Val:     groupPContext.Tokens,
 			TokType: Group,
@@ -53,12 +57,20 @@ func buildTokens(ctx *PContext, regInput string) *regerrors.RegexError {
 	return nil
 }
 
-func parseGroup(ctx *PContext, regInput string) {
+func parseGroup(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context Error",
+			Message: "Could not parse group with an empty context",
+		}
+	}
 	ctx.increment()
 	for regInput[ctx.Index] != ')' {
 		buildTokens(ctx, regInput)
 		ctx.increment()
 	}
+
+	return nil
 }
 
 func parseBracket(ctx *PContext, regInput string) *regerrors.RegexError {
