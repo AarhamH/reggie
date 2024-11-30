@@ -22,17 +22,25 @@ func buildTokens(ctx *PContext, regInput string) *regerrors.RegexError {
 			TokType: Group,
 		}
 		ctx.pushToken(token)
+
 	case '[':
 		err := parseBracket(ctx, regInput)
 		if err != nil {
 			return err
 		}
+
 	case '{':
 		parseRepeatingSpecfic(ctx, regInput)
+
 	case '|':
-		parseOr(ctx, regInput)
+		err := parseOr(ctx, regInput)
+		if err != nil {
+			return err
+		}
+
 	case '*', '?', '+':
 		parseRepeating(ctx, regInput)
+
 	default:
 		token := Token{
 			Val:     regChar,
@@ -53,7 +61,7 @@ func parseGroup(ctx *PContext, regInput string) {
 	}
 }
 
-func parseBracket(ctx *PContext, regInput string) {
+func parseBracket(ctx *PContext, regInput string) *regerrors.RegexError {
 	ctx.increment()
 
 	if ctx.Index >= len(regInput) || regInput[ctx.Index] == ']' {
@@ -123,7 +131,14 @@ func parseBracket(ctx *PContext, regInput string) {
 	return nil
 }
 
-func parseOr(ctx *PContext, regInput string) {
+func parseOr(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: "Trying to parse character with a nil context",
+		}
+	}
+
 	rightContext := &PContext{
 		Index:  ctx.Index,
 		Tokens: []Token{},
@@ -132,8 +147,19 @@ func parseOr(ctx *PContext, regInput string) {
 	rightContext.Index++
 
 	for rightContext.Index < len(regInput) && regInput[rightContext.Index] != ')' {
-		buildTokens(rightContext, regInput)
+		err := buildTokens(rightContext, regInput)
+		if err != nil {
+			return err
+		}
 		rightContext.Index++
+	}
+
+	if rightContext.Index >= len(regInput) || regInput[rightContext.Index] != ')' {
+		return &regerrors.RegexError{
+			Code:    "Parsing Error Error",
+			Message: "Could not reach end paren",
+			Pos:     rightContext.Index,
+		}
 	}
 
 	leftToken := Token{
@@ -151,6 +177,8 @@ func parseOr(ctx *PContext, regInput string) {
 		Val:     []Token{leftToken, rightToken},
 		TokType: Or,
 	}}
+
+	return nil
 }
 
 func parseRepeating(ctx *PContext, regInput string) {
