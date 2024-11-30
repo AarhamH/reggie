@@ -33,7 +33,10 @@ func tokenToFSA(t *parser.Token) (*States, *States, *regerrors.RegexError) {
 		}
 
 	case parser.Group, parser.GroupUncap:
-		groupFSA(t, start, end)
+		err := groupFSA(t, start, end)
+		if err != nil {
+			return nil, nil, err
+		}
 	case parser.Repeat:
 		repeatFSA(t, start, end)
 	default:
@@ -108,15 +111,27 @@ func bracketFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
 	return nil
 }
 
-func groupFSA(t *parser.Token, s *States, e *States) {
+func groupFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
+	if t == nil || s == nil || e == nil {
+		return &regerrors.RegexError{
+			Code:    "Graph Error",
+			Message: "Cannot build graph with nil token, start, and/or end states",
+		}
+	}
+
 	tokens := t.Val.([]parser.Token)
-	s, e, _ = tokenToFSA(&tokens[0])
+	_, e, err := tokenToFSA(&tokens[0])
+	if err != nil {
+		return err
+	}
 
 	for i := 1; i < len(tokens); i++ {
 		ts, te, _ := tokenToFSA(&tokens[i])
 		e.pushTransition(EPSILON, ts)
 		e = te
 	}
+
+	return nil
 }
 
 func repeatFSA(t *parser.Token, s *States, e *States) {
