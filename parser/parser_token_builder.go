@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	regerrors "tinyreg/regerrors"
 )
 
-func buildTokens(ctx *PContext, regInput string) {
+func buildTokens(ctx *PContext, regInput string) *regerrors.RegexError {
 	regChar := regInput[ctx.Index]
 
 	switch regChar {
@@ -15,20 +16,41 @@ func buildTokens(ctx *PContext, regInput string) {
 			Index:  ctx.Index,
 			Tokens: []Token{},
 		}
-		parseGroup(groupPContext, regInput)
+		err := parseGroup(groupPContext, regInput)
+		if err != nil {
+			return err
+		}
+
 		token := Token{
 			Val:     groupPContext.Tokens,
 			TokType: Group,
 		}
 		ctx.pushToken(token)
+
 	case '[':
-		parseBracket(ctx, regInput)
+		err := parseBracket(ctx, regInput)
+		if err != nil {
+			return err
+		}
+
 	case '{':
-		parseRepeatingSpecfic(ctx, regInput)
+		err := parseRepeatingSpecfic(ctx, regInput)
+		if err != nil {
+			return err
+		}
+
 	case '|':
-		parseOr(ctx, regInput)
+		err := parseOr(ctx, regInput)
+		if err != nil {
+			return err
+		}
+
 	case '*', '?', '+':
-		parseRepeating(ctx, regInput)
+		err := parseRepeating(ctx, regInput)
+		if err != nil {
+			return err
+		}
+
 	default:
 		token := Token{
 			Val:     regChar,
@@ -37,27 +59,69 @@ func buildTokens(ctx *PContext, regInput string) {
 
 		ctx.pushToken(token)
 	}
+
+	return nil
 }
 
-func parseGroup(ctx *PContext, regInput string) {
+func parseGroup(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context Error",
+			Message: "Could not parse group with an empty context",
+		}
+	}
+
 	ctx.increment()
 	for regInput[ctx.Index] != ')' {
 		buildTokens(ctx, regInput)
 		ctx.increment()
 	}
+
+	return nil
 }
 
-func parseBracket(ctx *PContext, regInput string) {
+func parseBracket(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: "Trying to parse bracket with a nil context",
+		}
+	}
+
 	ctx.increment()
+
+	if ctx.Index >= len(regInput) || regInput[ctx.Index] == ']' {
+		return &regerrors.RegexError{
+			Code:    "Syntax Error",
+			Message: "Empty character class or malformed bracket expression",
+			Pos:     ctx.Index,
+		}
+	}
+
 	var literals []string
 	for regInput[ctx.Index] != ']' {
 		regChar := regInput[ctx.Index]
 
 		if regChar == '-' {
 			literalLastIndex := len(literals) - 1
+			if len(literals) == 0 || ctx.Index+1 >= len(regInput) {
+				return &regerrors.RegexError{
+					Code:    "Syntax Error",
+					Message: fmt.Sprintf("Invalid range syntax at position %d", ctx.Index),
+					Pos:     ctx.Index,
+				}
+			}
 
 			next := regInput[ctx.Index+1]
 			prev := literals[literalLastIndex][0]
+
+			if prev > next {
+				return &regerrors.RegexError{
+					Code:    "Syntax error",
+					Message: fmt.Sprintf("Invalid character range: %c-%c", prev, next),
+					Pos:     ctx.Index,
+				}
+			}
 
 			literals[literalLastIndex] = fmt.Sprintf("%c%c", prev, next)
 			ctx.increment()
@@ -68,22 +132,46 @@ func parseBracket(ctx *PContext, regInput string) {
 		ctx.increment()
 	}
 
-	literalsSet := map[uint8]bool{}
+	if ctx.Index >= len(regInput) || regInput[ctx.Index] != ']' {
+		return &regerrors.RegexError{
+			Code:    "Syntax Error",
+			Message: "Unmatched closing bracket ']'",
+			Pos:     ctx.Index,
+		}
+	}
 
+	literalsSet := map[uint8]bool{}
 	for _, l := range literals {
 		for i := l[0]; i <= l[len(l)-1]; i++ {
 			literalsSet[i] = true
 		}
 	}
+
 	token := Token{
 		Val:     literalsSet,
 		TokType: Bracket,
 	}
 
 	ctx.pushToken(token)
+
+	return nil
 }
 
-func parseOr(ctx *PContext, regInput string) {
+func parseOr(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: "Trying to parse character with a nil context",
+		}
+	}
+
+	if ctx.Index >= len(regInput) {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: fmt.Sprintf("Index will reach out of bounds: ctx.Index: %d, length of input: %d", ctx.Index, len(regInput)),
+		}
+	}
+
 	rightContext := &PContext{
 		Index:  ctx.Index,
 		Tokens: []Token{},
@@ -92,8 +180,19 @@ func parseOr(ctx *PContext, regInput string) {
 	rightContext.Index++
 
 	for rightContext.Index < len(regInput) && regInput[rightContext.Index] != ')' {
-		buildTokens(rightContext, regInput)
+		err := buildTokens(rightContext, regInput)
+		if err != nil {
+			return err
+		}
 		rightContext.Index++
+	}
+
+	if rightContext.Index >= len(regInput) || regInput[rightContext.Index] != ')' {
+		return &regerrors.RegexError{
+			Code:    "Parsing Error Error",
+			Message: "Could not reach end paren",
+			Pos:     rightContext.Index,
+		}
 	}
 
 	leftToken := Token{
@@ -111,9 +210,25 @@ func parseOr(ctx *PContext, regInput string) {
 		Val:     []Token{leftToken, rightToken},
 		TokType: Or,
 	}}
+
+	return nil
 }
 
-func parseRepeating(ctx *PContext, regInput string) {
+func parseRepeating(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: "Trying to parse bracket with a nil context",
+		}
+	}
+
+	if ctx.Index >= len(regInput) {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: fmt.Sprintf("Index will reach out of bounds: ctx.Index: %d, length of input: %d", ctx.Index, len(regInput)),
+		}
+	}
+
 	regChar := regInput[ctx.Index]
 
 	var min int
@@ -141,9 +256,24 @@ func parseRepeating(ctx *PContext, regInput string) {
 		},
 		TokType: Repeat,
 	}
+
+	return nil
 }
 
-func parseRepeatingSpecfic(ctx *PContext, regInput string) {
+func parseRepeatingSpecfic(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: "Trying to parse bracket with a nil context",
+		}
+	}
+
+	if ctx.Index >= len(regInput) {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: fmt.Sprintf("Index will reach out of bounds: ctx.Index: %d, length of input: %d", ctx.Index, len(regInput)),
+		}
+	}
 	startIndex := ctx.Index + 1
 
 	for regInput[ctx.Index] != '}' {
@@ -157,7 +287,10 @@ func parseRepeatingSpecfic(ctx *PContext, regInput string) {
 	var max int
 	if len(pieces) == 1 {
 		if value, err := strconv.Atoi(pieces[0]); err != nil {
-			panic(err.Error())
+			return &regerrors.RegexError{
+				Code:    "Context Error",
+				Message: err.Error(),
+			}
 		} else {
 			min = value
 			max = value
@@ -189,4 +322,6 @@ func parseRepeatingSpecfic(ctx *PContext, regInput string) {
 		},
 		TokType: Repeat,
 	}
+
+	return nil
 }
