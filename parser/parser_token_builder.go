@@ -253,7 +253,20 @@ func parseRepeating(ctx *PContext, regInput string) *regerrors.RegexError {
 	return nil
 }
 
-func parseRepeatingSpecfic(ctx *PContext, regInput string) {
+func parseRepeatingSpecfic(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: "Trying to parse bracket with a nil context",
+		}
+	}
+
+	if ctx.Index >= len(regInput) {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: fmt.Sprintf("Index will reach out of bounds: ctx.Index: %d, length of input: %d", ctx.Index, len(regInput)),
+		}
+	}
 	startIndex := ctx.Index + 1
 
 	for regInput[ctx.Index] != '}' {
@@ -267,7 +280,10 @@ func parseRepeatingSpecfic(ctx *PContext, regInput string) {
 	var max int
 	if len(pieces) == 1 {
 		if value, err := strconv.Atoi(pieces[0]); err != nil {
-			panic(err.Error())
+			return &regerrors.RegexError{
+				Code:    "Context Error",
+				Message: err.Error(),
+			}
 		} else {
 			min = value
 			max = value
@@ -299,4 +315,6 @@ func parseRepeatingSpecfic(ctx *PContext, regInput string) {
 		},
 		TokType: Repeat,
 	}
+
+	return nil
 }
