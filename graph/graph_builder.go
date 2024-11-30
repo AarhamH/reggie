@@ -20,8 +20,13 @@ func tokenToFSA(t *parser.Token) (*States, *States, *regerrors.RegexError) {
 		if err != nil {
 			return nil, nil, err
 		}
+
 	case parser.Or:
-		orFSA(t, start, end)
+		err := orFSA(t, start, end)
+		if err != nil {
+			return nil, nil, err
+		}
+
 	case parser.Bracket:
 		bracketFSA(t, start, end)
 	case parser.Group, parser.GroupUncap:
@@ -48,17 +53,33 @@ func literalFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
 	return nil
 }
 
-func orFSA(t *parser.Token, s *States, e *States) {
+func orFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
+	if t == nil || s == nil || e == nil {
+		return &regerrors.RegexError{
+			Code:    "Graph Error",
+			Message: "Cannot build graph with nil token, start, and/or end states",
+		}
+	}
+
 	vals := t.Val.([]parser.Token)
 	left := vals[0]
 	right := vals[1]
 
-	s1, e1, _ := tokenToFSA(&left)
-	s2, e2, _ := tokenToFSA(&right)
+	s1, e1, err := tokenToFSA(&left)
+	if err != nil {
+		return err
+	}
+
+	s2, e2, err := tokenToFSA(&right)
+	if err != nil {
+		return err
+	}
 
 	s.Transitions[EPSILON] = []*States{s1, s2}
 	e1.Transitions[EPSILON] = []*States{e}
 	e2.Transitions[EPSILON] = []*States{e}
+
+	return nil
 }
 
 func bracketFSA(t *parser.Token, s *States, e *States) {
