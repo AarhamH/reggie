@@ -80,6 +80,7 @@ func parseBracket(ctx *PContext, regInput string) *regerrors.RegexError {
 			Message: "Trying to parse bracket with a nil context",
 		}
 	}
+
 	ctx.increment()
 
 	if ctx.Index >= len(regInput) || regInput[ctx.Index] == ']' {
@@ -154,6 +155,13 @@ func parseOr(ctx *PContext, regInput string) *regerrors.RegexError {
 		return &regerrors.RegexError{
 			Code:    "Context error",
 			Message: "Trying to parse character with a nil context",
+		}
+	}
+
+	if ctx.Index >= len(regInput) {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: fmt.Sprintf("Index will reach out of bounds: ctx.Index: %d, length of input: %d", ctx.Index, len(regInput)),
 		}
 	}
 
