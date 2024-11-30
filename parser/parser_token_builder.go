@@ -199,7 +199,21 @@ func parseOr(ctx *PContext, regInput string) *regerrors.RegexError {
 	return nil
 }
 
-func parseRepeating(ctx *PContext, regInput string) {
+func parseRepeating(ctx *PContext, regInput string) *regerrors.RegexError {
+	if ctx == nil {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: "Trying to parse bracket with a nil context",
+		}
+	}
+
+	if ctx.Index >= len(regInput) {
+		return &regerrors.RegexError{
+			Code:    "Context error",
+			Message: fmt.Sprintf("Index will reach out of bounds: ctx.Index: %d, length of input: %d", ctx.Index, len(regInput)),
+		}
+	}
+
 	regChar := regInput[ctx.Index]
 
 	var min int
@@ -227,6 +241,8 @@ func parseRepeating(ctx *PContext, regInput string) {
 		},
 		TokType: Repeat,
 	}
+
+	return nil
 }
 
 func parseRepeatingSpecfic(ctx *PContext, regInput string) {
