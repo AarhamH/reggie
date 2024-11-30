@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	regerrors "tinyreg/regerrors"
 )
 
-func buildTokens(ctx *PContext, regInput string) {
+func buildTokens(ctx *PContext, regInput string) *regerrors.RegexError {
 	regChar := regInput[ctx.Index]
 
 	switch regChar {
@@ -22,7 +23,10 @@ func buildTokens(ctx *PContext, regInput string) {
 		}
 		ctx.pushToken(token)
 	case '[':
-		parseBracket(ctx, regInput)
+		err := parseBracket(ctx, regInput)
+		if err != nil {
+			return err
+		}
 	case '{':
 		parseRepeatingSpecfic(ctx, regInput)
 	case '|':
@@ -37,6 +41,8 @@ func buildTokens(ctx *PContext, regInput string) {
 
 		ctx.pushToken(token)
 	}
+
+	return nil
 }
 
 func parseGroup(ctx *PContext, regInput string) {
@@ -49,15 +55,39 @@ func parseGroup(ctx *PContext, regInput string) {
 
 func parseBracket(ctx *PContext, regInput string) {
 	ctx.increment()
+
+	if ctx.Index >= len(regInput) || regInput[ctx.Index] == ']' {
+		return &regerrors.RegexError{
+			Code:    "Syntax Error",
+			Message: "Empty character class or malformed bracket expression",
+			Pos:     ctx.Index,
+		}
+	}
+
 	var literals []string
 	for regInput[ctx.Index] != ']' {
 		regChar := regInput[ctx.Index]
 
 		if regChar == '-' {
 			literalLastIndex := len(literals) - 1
+			if len(literals) == 0 || ctx.Index+1 >= len(regInput) {
+				return &regerrors.RegexError{
+					Code:    "Syntax Error",
+					Message: fmt.Sprintf("Invalid range syntax at position %d", ctx.Index),
+					Pos:     ctx.Index,
+				}
+			}
 
 			next := regInput[ctx.Index+1]
 			prev := literals[literalLastIndex][0]
+
+			if prev > next {
+				return &regerrors.RegexError{
+					Code:    "Syntax error",
+					Message: fmt.Sprintf("Invalid character range: %c-%c", prev, next),
+					Pos:     ctx.Index,
+				}
+			}
 
 			literals[literalLastIndex] = fmt.Sprintf("%c%c", prev, next)
 			ctx.increment()
@@ -68,19 +98,29 @@ func parseBracket(ctx *PContext, regInput string) {
 		ctx.increment()
 	}
 
-	literalsSet := map[uint8]bool{}
+	if ctx.Index >= len(regInput) || regInput[ctx.Index] != ']' {
+		return &regerrors.RegexError{
+			Code:    "Syntax Error",
+			Message: "Unmatched closing bracket ']'",
+			Pos:     ctx.Index,
+		}
+	}
 
+	literalsSet := map[uint8]bool{}
 	for _, l := range literals {
 		for i := l[0]; i <= l[len(l)-1]; i++ {
 			literalsSet[i] = true
 		}
 	}
+
 	token := Token{
 		Val:     literalsSet,
 		TokType: Bracket,
 	}
 
 	ctx.pushToken(token)
+
+	return nil
 }
 
 func parseOr(ctx *PContext, regInput string) {
