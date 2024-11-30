@@ -34,7 +34,10 @@ func buildTokens(ctx *PContext, regInput string) *regerrors.RegexError {
 		}
 
 	case '{':
-		parseRepeatingSpecfic(ctx, regInput)
+		err := parseRepeatingSpecfic(ctx, regInput)
+		if err != nil {
+			return err
+		}
 
 	case '|':
 		err := parseOr(ctx, regInput)
@@ -43,7 +46,10 @@ func buildTokens(ctx *PContext, regInput string) *regerrors.RegexError {
 		}
 
 	case '*', '?', '+':
-		parseRepeating(ctx, regInput)
+		err := parseRepeating(ctx, regInput)
+		if err != nil {
+			return err
+		}
 
 	default:
 		token := Token{
@@ -64,6 +70,7 @@ func parseGroup(ctx *PContext, regInput string) *regerrors.RegexError {
 			Message: "Could not parse group with an empty context",
 		}
 	}
+
 	ctx.increment()
 	for regInput[ctx.Index] != ')' {
 		buildTokens(ctx, regInput)
