@@ -16,7 +16,10 @@ func tokenToFSA(t *parser.Token) (*States, *States, *regerrors.RegexError) {
 
 	switch t.TokType {
 	case parser.Literal:
-		literalFSA(t, start, end)
+		err := literalFSA(t, start, end)
+		if err != nil {
+			return nil, nil, err
+		}
 	case parser.Or:
 		orFSA(t, start, end)
 	case parser.Bracket:
