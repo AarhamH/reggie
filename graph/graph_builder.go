@@ -38,9 +38,16 @@ func tokenToFSA(t *parser.Token) (*States, *States, *regerrors.RegexError) {
 			return nil, nil, err
 		}
 	case parser.Repeat:
-		repeatFSA(t, start, end)
+		err := repeatFSA(t, start, end)
+		if err != nil {
+			return nil, nil, err
+		}
+
 	default:
-		panic("Token type not known")
+		return nil, nil, &regerrors.RegexError{
+			Code:    "Graph Error",
+			Message: "Token type not found",
+		}
 	}
 
 	return start, end, nil
@@ -134,7 +141,13 @@ func groupFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
 	return nil
 }
 
-func repeatFSA(t *parser.Token, s *States, e *States) {
+func repeatFSA(t *parser.Token, s *States, e *States) *regerrors.RegexError {
+	if t == nil || s == nil || e == nil {
+		return &regerrors.RegexError{
+			Code:    "Graph Error",
+			Message: "Cannot build graph with nil token, start, and/or end states",
+		}
+	}
 	p := t.Val.(parser.RepeatPayload)
 
 	if p.Min == 0 {
@@ -173,4 +186,6 @@ func repeatFSA(t *parser.Token, s *States, e *States) {
 	if p.Max == parser.REPEAT_INDEX {
 		e.pushTransition(EPSILON, from)
 	}
+
+	return nil
 }
