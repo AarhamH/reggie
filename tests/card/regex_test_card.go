@@ -2,9 +2,9 @@ package tests
 
 import (
 	"fmt"
-	"testing"
 	graph "reggie/graph"
 	parser "reggie/parser"
+	"testing"
 )
 
 func TestCreditCardNumber(t *testing.T) {
@@ -19,10 +19,9 @@ func TestCreditCardNumber(t *testing.T) {
 		{card: "4901234567890123", validity: true},
 
 		// card numbers that will fail
-		{card: "4123456789012343", validity: true},
-		{card: "4234567890123452", validity: true},
-		{card: "4345678901234561", validity: true},
-		{card: "4901234567890123", validity: true},
+		{card: "5123456789012343", validity: false},
+		{card: "4234", validity: false},
+		{card: "test_characters", validity: false},
 	}
 
 	ctx := parser.Parse(`4[0-9]{12}[0-9]{3}`)
