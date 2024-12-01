@@ -5,28 +5,30 @@ import (
 	"strings"
 
 	"github.com/manifoldco/promptui"
+
+	graph "reggie/graph"
+	parser "reggie/parser"
 )
 
 func main() {
-	// Step 1: Take initial user input and store it
 	prompt := promptui.Prompt{
-		Label: "Enter your first input",
+		Label: "Enter a regex formula",
 	}
 
-	input1, err := prompt.Run()
+	regExpression, err := prompt.Run()
 	if err != nil {
 		fmt.Printf("Error reading input: %v\n", err)
 		return
 	}
-	fmt.Printf("Stored input1: %s\n\n", input1)
 
-	// Step 2: Start REPL for multiple inputs
-	fmt.Println("Entering REPL mode. Type 'exit' to quit.")
+	ctx := parser.Parse(regExpression)
+	g := graph.ToGraph(ctx)
+
+	fmt.Println("Entering REPL mode. Type 'exit()' to quit, or change() to enter new regex formula.")
 
 	for {
-		// Step 3: Create the prompt for further inputs with cursor support
 		prompt = promptui.Prompt{
-			Label: fmt.Sprintf("Enter input (you can refer to input1: %s)", input1),
+			Label: fmt.Sprintf("Enter string to check match (current regex: %s)", regExpression),
 		}
 
 		userInput, err := prompt.Run()
@@ -35,26 +37,36 @@ func main() {
 			return
 		}
 
-		if strings.ToLower(userInput) == "change" {
+		if strings.ToLower(userInput) == "change()" {
 			prompt = promptui.Prompt{
-				Label: "Enter new input",
+				Label:   "Enter new input",
+				Default: regExpression,
 			}
-			input1, err = prompt.Run()
+
+			regExpression, err = prompt.Run()
 			if err != nil {
 				fmt.Printf("Error reading input: %v\n", err)
 				return
 			}
 
-			fmt.Printf("Stored input1: %s\n\n", input1)
+			ctx = parser.Parse(regExpression)
+			g = graph.ToGraph(ctx)
+
+			fmt.Printf("Stored input1: %s\n\n", regExpression)
+			continue
 		}
 
-		// Handle exit condition
-		if strings.ToLower(userInput) == "exit" {
+		if strings.ToLower(userInput) == "exit()" {
 			fmt.Println("Exiting REPL.")
 			break
 		}
 
-		// Optionally process or modify input here
 		fmt.Printf("You entered: %s\n", userInput)
+		result := g.Check(userInput, -1)
+		if result {
+			fmt.Printf("Match status: true\n")
+		} else {
+			fmt.Printf("Match status: false\n")
+		}
 	}
 }
