@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	regerrors "tinyreg/regerrors"
+	regerrors "reggie/regerrors"
 )
 
 func buildTokens(ctx *PContext, regInput string) *regerrors.RegexError {

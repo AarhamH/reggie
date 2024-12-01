@@ -3,8 +3,8 @@ package tests
 import (
 	"fmt"
 	"testing"
-	graph "tinyreg/graph"
-	parser "tinyreg/parser"
+	graph "reggie/graph"
+	parser "reggie/parser"
 )
 
 func TestCreditCardNumber(t *testing.T) {

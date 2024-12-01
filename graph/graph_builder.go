@@ -1,8 +1,8 @@
 package graph
 
 import (
-	parser "tinyreg/parser"
-	regerrors "tinyreg/regerrors"
+	parser "reggie/parser"
+	regerrors "reggie/regerrors"
 )
 
 func tokenToFSA(t *parser.Token) (*States, *States, *regerrors.RegexError) {

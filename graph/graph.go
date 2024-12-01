@@ -1,7 +1,7 @@
 package graph
 
 import (
-	parser "tinyreg/parser"
+	parser "reggie/parser"
 )
 
 func ToGraph(ctx *parser.PContext) *States {
