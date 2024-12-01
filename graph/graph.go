@@ -5,10 +5,10 @@ import (
 )
 
 func ToGraph(ctx *parser.PContext) *States {
-	startState, endState := tokenToFSA(&ctx.Tokens[0])
+	startState, endState, _ := tokenToFSA(&ctx.Tokens[0])
 
 	for i := 1; i < len(ctx.Tokens); i++ {
-		startNext, endNext := tokenToFSA(&ctx.Tokens[i])
+		startNext, endNext, _ := tokenToFSA(&ctx.Tokens[i])
 		endState.pushTransition(EPSILON, startNext)
 		endState = endNext
 	}
