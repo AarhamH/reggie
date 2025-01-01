@@ -8,6 +8,6 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o main main.go
+RUN go build -o reggie main.go
 
-CMD ["go run ."]
+CMD ["./reggie"]
